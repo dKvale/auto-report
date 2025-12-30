@@ -24,7 +24,7 @@ library(plotly)
 library(crosstalk)
 library(DT)
 
-df <- read_csv("shinylive_app/simpler_df.csv")
+df <- read_csv("simpler_df.csv")
 
 df <- df %>% filter(nchar(CHEMICAL_NAME) < 18)
 
@@ -156,3 +156,4 @@ datatable(df %>% sample_n(10000) %>% select(CHEMICAL_NAME, LOC_NAME, everything(
           rownames = FALSE)
 
 ```
+
