@@ -1,0 +1,158 @@
+---
+title: "Water Quality Dashboard"
+format: 
+  html:
+    page-layout: full
+    embed-resources: true
+    toc: true
+    toc-depth: 2         
+    toc-location: left  
+    toc-floating: true   
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+  
+  
+<br>
+
+## Parameters collected
+```{r} 
+library(tidyverse)
+library(plotly)
+library(crosstalk)
+library(DT)
+
+df <- read_csv("shinylive_app/simpler_df.csv")
+
+df <- df %>% filter(nchar(CHEMICAL_NAME) < 18)
+
+df <- df %>% 
+      mutate(LOC_NAME = coalesce(LOC_NAME, LOC_DESC) %>% toupper,
+             STREAM_CODE = coalesce(STREAM_CODE, SYS_LOC_CODE)) %>%
+      filter(!is.na(STREAM_CODE) | !is.na(SYS_LOC_CODE))
+
+datatable(df %>% 
+            group_by(SYS_LOC_CODE) %>% 
+            summarize(LOC_NAME = LOC_NAME[1],
+                      LOC_TYPE = LOC_TYPE[1],
+                      PARAMETERS = unique(CHEMICAL_NAME) %>% sort %>% paste(collapse = ", ")
+                      ) %>% 
+            arrange(LOC_NAME), 
+          options = list(pageLength = 5, scrollX = TRUE), 
+          filter = "top",
+          rownames = FALSE)
+
+```
+  
+
+<br>  
+
+## Data explorer
+```{r} 
+library(htmltools)
+
+df <- df %>% 
+      mutate(row_id = row_number(),
+             LOCATION = paste0(LOC_NAME, " ", LOC_TYPE,  " :: ", SYS_LOC_CODE),
+             MONTH = lubridate::month(SAMPLE_DATE, label = TRUE, abbr = TRUE)) %>% 
+      arrange(SAMPLE_DATE)
+
+# Wrap the data with SharedData
+shared_df <- SharedData$new(df, key = ~row_id, group = "chemgroup")
+
+
+
+div(
+ style = "display: flex; gap: 2em; align-items: flex-end;",
+ div(
+    style = "width: 33%;",
+    # Filter dropdown for chemical_name
+    filter_select("chem_filter", "Select a parameter:", shared_df, ~CHEMICAL_NAME, multiple = FALSE)
+    ),
+ 
+div(
+    style = "width: 33%;",
+   # Location filter
+   filter_select("loc_filter", "Select a location:", shared_df, ~LOCATION, multiple = FALSE)
+   )
+)
+```
+  
+::: {.grid}
+::: {.g-col-6}
+### Trends
+```{r} 
+
+# Plot that responds to chemical selection
+plot_ly(shared_df, 
+        x = ~SAMPLE_DATE, 
+        y = ~RESULT_NUMERIC, 
+        type = "scatter", 
+        mode =  "lines+markers",
+        marker = list(size = 10),
+        line = list(shape = "spline"),
+        connectgaps = TRUE) %>%
+  layout(title = "Chemical Results Over Time",
+         xaxis = list(title = "Sample Date"),
+         yaxis = list(title = "Result"))
+```
+:::
+
+::: {.g-col-6}
+### By month
+```{r} 
+
+# Compare results by month
+
+# Plotly boxplot grouped by month
+plot_ly(shared_df,
+        x = ~MONTH,
+        y = ~RESULT_NUMERIC,
+        type = "box",
+        boxpoints = "all",          # show points
+        jitter = 0.02,              # add some jitter
+        pointpos = -1.5,            # shift points to left of box
+        marker = list(size = 5)) %>%
+  layout(title = "Monthly Distribution",
+         xaxis = list(title = "Month"),
+         yaxis = list(title = "Result"))
+```
+
+:::
+:::
+
+### Summary table
+```{r}
+datatable(
+  shared_df$data()  %>%
+    #highlight() %>%  # Optional: lets you highlight selected rows
+    summarize(
+      N = n(),
+      Min = min(RESULT_NUMERIC, na.rm = TRUE),
+      Mean = mean(RESULT_NUMERIC, na.rm = TRUE) %>% signif(3),
+      Median = median(RESULT_NUMERIC, na.rm = TRUE),
+      Max = max(RESULT_NUMERIC, na.rm = TRUE),
+      SD = sd(RESULT_NUMERIC, na.rm = TRUE) %>% signif(3),
+      `NA Count` = sum(is.na(RESULT_NUMERIC))
+    ) %>%
+    as_tibble(), 
+  options = list(dom = 't', paging = FALSE),
+  rownames = FALSE
+)
+
+```
+
+<br>
+
+## Full data
+```{r} 
+# Interactive table
+datatable(df %>% sample_n(10000) %>% select(CHEMICAL_NAME, LOC_NAME, everything()) %>% 
+            arrange(CHEMICAL_NAME), 
+          options = list(pageLength = 5, scrollX = TRUE), 
+          filter = "top",
+          rownames = FALSE)
+
+```
