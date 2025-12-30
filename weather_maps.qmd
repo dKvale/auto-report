@@ -1,0 +1,60 @@
+---
+title: "Weather maps in R"
+format:
+  gfm:
+    preview-mode: raw
+---
+
+
+## Maps are fun again
+
+<br>
+
+![](https://leafletjs.com/docs/images/logo.png)
+
+https://rstudio.github.io/leaflet/
+
+
+![](https://www.craftsdirect.com/cache/5a482e0b61288738ba7462d28d1dde09.jpg)
+
+
+
+## Maps as data
+
+```{r, eval = T}
+
+# Create a point
+data <- data.frame(lat  = 46.24, long = -93.86) 
+                     
+```                    
+
+<br>
+
+
+---
+# Maps as charts
+
+```{r, eval = T}
+library(tidyverse)
+
+# Create a point
+data <- data.frame(lat = 46.24, long = -93.86) 
+
+# X/Y scatterplot
+ggplot(data, aes(y = lat, x = long)) + geom_point()
+                     
+```                    
+
+
+## Get in shape w/ **Polygons**
+
+.pull-left[
+![](https://raw.githubusercontent.com/MPCA-data/mpcaej/master/ej_map_pop.png)
+]
+
+.pull-right[
+![](https://pbs.twimg.com/media/DIPWeZCWsAADxvv?format=jpg&name=small)
+]
+
+
+
