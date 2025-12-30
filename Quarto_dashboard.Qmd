@@ -13,8 +13,13 @@ execute:
   warning: false
   message: false
 ---
-  
-  
+
+
+```{r}
+## Create manifest file for Posit Connect
+#rsconnect::writeManifest()
+```
+
 <br>
 
 ## Parameters collected
@@ -156,4 +161,5 @@ datatable(df %>% sample_n(10000) %>% select(CHEMICAL_NAME, LOC_NAME, everything(
           rownames = FALSE)
 
 ```
+
 
